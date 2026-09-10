@@ -45,7 +45,6 @@ async def send_url(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
 def main():
     app = Application.builder().token(TELEGRAM_TOKEN).build()
-    print("Токен:", TELEGRAM_TOKEN[:10] + "...")  # первые 10 символов
     print("Бот создан успешно")
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("send", send_photo))
