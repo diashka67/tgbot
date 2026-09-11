@@ -43,7 +43,9 @@ def get_btc_price():
     price = r["bitcoin"]["usd"]
     return f"Bitcoin: {price} USD"
 
-# ==== ОБРАБОТЧИКИ ====
+
+
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [["Погода", "Акции", "Валюта"]]
     reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
@@ -59,8 +61,24 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(get_btc_price())
     else:
         await update.message.reply_text("Не понял команду. Выберите из меню.")
+        await update.message.reply_audio(audio=f"https://cdn9.sefon.pro/prev/51FILviKqQsjebMWP1mr7g/1789151159/1056/Jambul%20-%20%D0%A4%D1%80%D0%B0%D0%BD%D0%BA%D0%BB%D0%B8%D0%BD%20%28192kbps%29.mp3", 
+                                         caption="некий трек", 
+                                         title="название", 
+                                         performer="артист")
+        await update.message.reply_audio(audio=f"путь к файлу", 
+                                         caption="некий трек", 
+                                         title="название", 
+                                         performer="артист")
+        await update.message.reply_video(video="mp4 формат",
+                                         caption="some video",
+                                         supports_streaming = True)
+        await update.message.reply_photo(photo = f"https://happypik.ru/wp-content/uploads/2019/09/odinokij-volk23.jpg",
+                                         caption = "с ссылочки")
+        await update.message.reply_document(document='')
 
-# ==== ЗАПУСК ====
+        new_keyboard = [['help']]
+        reply_markup = ReplyKeyboardMarkup(new_keyboard, resize_keyboard=True)
+        await update.business_message.edit_reply_markup()
 def main():
     app = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
     app.add_handler(CommandHandler("start", start))
