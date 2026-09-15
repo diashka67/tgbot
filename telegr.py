@@ -1,89 +1,109 @@
-import csv
-import requests
-from io import StringIO
-from telegram import Update, ReplyKeyboardMarkup
-from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
+import logging
+from telegram import Update, ReplyKeyboardMarkup, KeyboardButton
+from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 
 from secret import secrets
-
-# ==== НАСТРОЙКИ ====
 TELEGRAM_TOKEN = secrets['BOT_API_TOKEN']
-CITY = "Minsk"  # Город для прогноза
 
-# ==== ФУНКЦИИ ДЛЯ API ====
-def get_weather():
-    # Бесплатный API wttr.in
-    url = f"https://wttr.in/{CITY}?format=j1"
-    r = requests.get(url).json()
-    forecast = []
-    for day in r["weather"]:
-        date = day["date"]
-        avgtemp = day["avgtempC"]
-        desc = day["hourly"][4]["weatherDesc"][0]["value"]
-        forecast.append(f"{date}: {avgtemp}°C, {desc}")
-    return "\n".join(forecast)
-
-
-def get_stock_price():
-    # Пример: MSFT.US — Microsoft, AAPL.US — Apple
-    ticker = "MSFT.US"
-    url = f"https://stooq.com/q/l/?s={ticker}&f=sd2t2ohlcv&h&e=csv"
-    r = requests.get(url)
-    r.encoding = "utf-8"
-    data = list(csv.DictReader(StringIO(r.text)))
-    if data and "Close" in data[0]:
-        price = data[0]["Close"]
-        return f"Цена акции {ticker}: {price} USD"
-    else:
-        return "Не удалось получить данные по акции."
-
-def get_btc_price():
-    url = "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd"
-    r = requests.get(url).json()
-    price = r["bitcoin"]["usd"]
-    return f"Bitcoin: {price} USD"
-
-
-
+logging.basicConfig(
+    format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    level = logging.INFO
+    )
+logger = logging.getLogger(__name__)
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    keyboard = [["Погода", "Акции", "Валюта"]]
-    reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
-    await update.message.reply_text("Привет! Выберите действие:", reply_markup=reply_markup)
+    user = update.effective_user
+    logger.info(f"Пользователь {user.id} ({user.full_name}) нажал /start")
 
-async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    text = update.message.text.lower()
-    if text == "погода":
-        await update.message.reply_text(get_weather())
-    elif text == "акции":
-        await update.message.reply_text(get_stock_price())
-    elif text == "валюта":
-        await update.message.reply_text(get_btc_price())
+    keyboard = [
+        [KeyboardButton("Аудио"), KeyboardButton("Видео")],
+        [KeyboardButton("Фото"), KeyboardButton("Документ")],
+    ]
+    
+    markup = ReplyKeyboardMarkup(
+        keyboard,
+        resize_keyboard=True,
+        one_time_keyboard=False
+    )
+
+    text = (
+        "Сап бро! 🐷\n\n"
+        "Выбери кнопку или используй команды:\n"
+        "/start — показать кнопки\n"
+        "/photo — отправить фото\n"
+        "/url_photo — фото по ссылке\n"
+        "/video — отправить видео\n"
+        "/doc — отправить документ"
+    )
+
+    await update.message.reply_text(text, reply_markup=markup)
+    
+async def send_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    photo_path = r"C:\Users\HONOR\Pictures\cfff9f55b257ed8a4e5aec82ebde84ec.jpg"
+    
+    try:
+        with open(photo_path, "rb") as photo:
+            await update.message.reply_photo(
+                photo = photo,
+                caption = "тупа ты"
+            )
+            logger.info("Фото успешно отправлено")
+    except FileNotFoundError:
+        await update.message.reply_text("Файл не найден")
+        
+async def send_url_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    url = "https://i.pinimg.com/736x/c3/e6/69/c3e669f67c6ca042ebffd9b177fdd330.jpg"
+    await update.message.reply_photo(
+        photo = url,
+        caption = "с ссылочки"
+    )
+    
+    logger.info("чипитосик")
+async def send_audio(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_audio(audio=f"https://cdn9.sefon.pro/prev/51FILviKqQsjebMWP1mr7g/1789151159/1056/Jambul%20-%20%D0%A4%D1%80%D0%B0%D0%BD%D0%BA%D0%BB%D0%B8%D0%BD%20%28192kbps%29.mp3", 
+                                    caption="некий трек", 
+                                    title="название", 
+                                    performer="артист")
+async def send_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_video(
+        video="https://www.w3schools.com/html/mov_bbb.mp4",   
+        caption="Какое-то видео",
+        supports_streaming=True)
+    
+async def send_document(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_document(
+        document=r"C:\доки\алгебра шпоры экз.pdf",  
+        caption="Вот документ"
+    )
+async def handle_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    text = update.message.text
+
+    if text == "Аудио":
+        await send_audio(update, context)
+    elif text == "Видео":
+        await send_video(update, context)
+    elif text == "Фото":
+        await send_photo(update, context)
+    elif text == "Документ":
+        await send_document(update, context)
+    elif text == "Ссылка на фото":
+        await send_url_photo(update, context)
     else:
-        await update.message.reply_text("Не понял команду. Выберите из меню.")
-        await update.message.reply_audio(audio=f"https://cdn9.sefon.pro/prev/51FILviKqQsjebMWP1mr7g/1789151159/1056/Jambul%20-%20%D0%A4%D1%80%D0%B0%D0%BD%D0%BA%D0%BB%D0%B8%D0%BD%20%28192kbps%29.mp3", 
-                                         caption="некий трек", 
-                                         title="название", 
-                                         performer="артист")
-        await update.message.reply_audio(audio=f"путь к файлу", 
-                                         caption="некий трек", 
-                                         title="название", 
-                                         performer="артист")
-        await update.message.reply_video(video="mp4 формат",
-                                         caption="some video",
-                                         supports_streaming = True)
-        await update.message.reply_photo(photo = f"https://happypik.ru/wp-content/uploads/2019/09/odinokij-volk23.jpg",
-                                         caption = "с ссылочки")
-        await update.message.reply_document(document='')
-
-        new_keyboard = [['help']]
-        reply_markup = ReplyKeyboardMarkup(new_keyboard, resize_keyboard=True)
-        await update.business_message.edit_reply_markup()
+        await update.message.reply_text("я не понял")
 def main():
-    app = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
+    app = Application.builder().token(TELEGRAM_TOKEN).build()
+    print("Бот создан успешно")
     app.add_handler(CommandHandler("start", start))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-    app.run_polling()
-
+    app.add_handler(CommandHandler("photo", send_photo))
+    app.add_handler(CommandHandler("url_photo", send_url_photo))
+    app.add_handler(CommandHandler("video", send_video))
+    app.add_handler(CommandHandler("doc", send_document))
+    
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_buttons))
+    
+    logger.info("Бот запускается...")
+    print("Бот запущен")
+    app.run_polling(allowed_updates = Update.ALL_TYPES)
+    
 if __name__ == "__main__":
     main()
