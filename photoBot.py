@@ -28,7 +28,7 @@ def log_file():
     if not Log_file.exists():
         with open(Log_file, "w", encoding="utf-8", newline="") as f:
             csv.writer(f, delimiter="\t").writerow(
-                ["Uniс_ID", "@TG_nick", "Motion", "API", "Date", "Time", "API_answer"]
+                ["Unic_ID", "@TG_nick", "Motion", "API", "Date", "Time", "API_answer"]
             )
 
 
@@ -80,7 +80,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if data == "api:weather":
         await get_weather(query, user)
     elif data == "api:country":
-        await get_country(query, user)
+        await get_ip(query, user)
     elif data == "api:dog":
         await get_dog(query, user)
     else:
@@ -121,7 +121,7 @@ async def get_weather(query, user):
         log_action(user, "Button: Погода", api_name, error)
 
 
-async def get_country(query, user):
+async def get_ip(query, user):
     api_name = "ipify"
     url = "https://api.ipify.org?format=json"
 
@@ -150,7 +150,7 @@ async def get_dog(query, user):
         async with aiohttp.ClientSession() as session:
             async with session.get(url) as resp:
                 data = await resp.json()
-
+ 
         image_url = data["message"]
         await query.message.reply_photo(
             photo=image_url,
@@ -173,7 +173,7 @@ def main():
     app.add_handler(CallbackQueryHandler(button_handler))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, text_handler))
 
-    print("Бот запущен. Логи → bot_log.csv")
+    print("Бот запущен.")
     app.run_polling(allowed_updates=Update.ALL_TYPES)
 
 
